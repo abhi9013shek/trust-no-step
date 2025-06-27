@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Position, LevelData, Trap } from './Game';
 
 interface PlayerProps {
@@ -29,6 +29,24 @@ const Player: React.FC<PlayerProps> = ({
   const [velocity, setVelocity] = useState<Position>({ x: 0, y: 0 });
   const [isGrounded, setIsGrounded] = useState(false);
   const [keys, setKeys] = useState<Set<string>>(new Set());
+
+  // Use refs to access current values in the game loop
+  const positionRef = useRef(position);
+  const velocityRef = useRef(velocity);
+  const keysRef = useRef(keys);
+
+  // Update refs when state changes
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
+
+  useEffect(() => {
+    velocityRef.current = velocity;
+  }, [velocity]);
+
+  useEffect(() => {
+    keysRef.current = keys;
+  }, [keys]);
 
   // Handle keyboard input
   useEffect(() => {
@@ -169,37 +187,37 @@ const Player: React.FC<PlayerProps> = ({
     }
   }, [levelData.exit, onLevelComplete]);
 
-  // Game loop
+  // Game loop - now with stable dependencies
   useEffect(() => {
     const gameLoop = setInterval(() => {
-      setVelocity(prevVel => {
-        let newVel = { ...prevVel };
-        
-        // Apply gravity
-        newVel.y += GRAVITY;
+      const currentKeys = keysRef.current;
+      const currentVelocity = velocityRef.current;
+      const currentPosition = positionRef.current;
+      
+      // Apply gravity and handle movement
+      let newVel = { ...currentVelocity };
+      newVel.y += GRAVITY;
 
-        // Handle horizontal movement
-        const leftPressed = keys.has('arrowleft') || keys.has('a');
-        const rightPressed = keys.has('arrowright') || keys.has('d');
-        
-        if (leftPressed && !rightPressed) {
-          newVel.x = reversedControls ? MOVE_SPEED : -MOVE_SPEED;
-        } else if (rightPressed && !leftPressed) {
-          newVel.x = reversedControls ? -MOVE_SPEED : MOVE_SPEED;
-        } else {
-          newVel.x = 0;
-        }
+      // Handle horizontal movement
+      const leftPressed = currentKeys.has('arrowleft') || currentKeys.has('a');
+      const rightPressed = currentKeys.has('arrowright') || currentKeys.has('d');
+      
+      if (leftPressed && !rightPressed) {
+        newVel.x = reversedControls ? MOVE_SPEED : -MOVE_SPEED;
+      } else if (rightPressed && !leftPressed) {
+        newVel.x = reversedControls ? -MOVE_SPEED : MOVE_SPEED;
+      } else {
+        newVel.x = 0;
+      }
 
-        return newVel;
-      });
-
+      // Calculate new position
       let newPos = {
-        x: position.x + velocity.x,
-        y: position.y + velocity.y
+        x: currentPosition.x + newVel.x,
+        y: currentPosition.y + newVel.y
       };
 
       // Check collisions
-      const collision = checkPlatformCollision(newPos, velocity);
+      const collision = checkPlatformCollision(newPos, newVel);
       newPos = collision.pos;
       setVelocity(collision.vel);
       setIsGrounded(collision.grounded);
@@ -222,7 +240,7 @@ const Player: React.FC<PlayerProps> = ({
     }, 16); // ~60 FPS
 
     return () => clearInterval(gameLoop);
-  }, [velocity, keys, checkPlatformCollision, checkExit, onDeath, reversedControls, onPositionChange, position]);
+  }, [checkPlatformCollision, checkExit, onDeath, reversedControls, onPositionChange]);
 
   // Handle jumping
   useEffect(() => {
