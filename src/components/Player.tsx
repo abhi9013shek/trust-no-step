@@ -83,8 +83,10 @@ const Player: React.FC<PlayerProps> = ({
     let grounded = false;
     let newVel = { ...vel };
 
+    console.log('Player position:', pos, 'Player rect:', playerRect);
+
     // Check regular platforms
-    levelData.platforms.forEach(platform => {
+    levelData.platforms.forEach((platform, index) => {
       const platformRect = {
         left: platform.x,
         right: platform.x + 100,
@@ -98,6 +100,7 @@ const Player: React.FC<PlayerProps> = ({
           playerRect.bottom > platformRect.top &&
           playerRect.top < platformRect.bottom) {
         
+        console.log('Collision with regular platform', index, platform);
         // Landing on top
         if (vel.y > 0 && playerRect.top < platformRect.top) {
           pos.y = platformRect.top - PLAYER_SIZE.height;
@@ -109,21 +112,26 @@ const Player: React.FC<PlayerProps> = ({
 
     // Check trap platforms
     levelData.traps.forEach(trap => {
-      if (trap.type === 'fake' || (trap.type === 'disappearing' && !triggeredTraps.has(trap.id))) {
-        const trapRect = {
-          left: trap.x,
-          right: trap.x + trap.width,
-          top: trap.y,
-          bottom: trap.y + trap.height
-        };
+      const trapRect = {
+        left: trap.x,
+        right: trap.x + trap.width,
+        top: trap.y,
+        bottom: trap.y + trap.height
+      };
 
+      console.log('Checking trap:', trap.type, 'at', trap.x, trap.y, 'trapRect:', trapRect);
+
+      if (trap.type === 'fake' || (trap.type === 'disappearing' && !triggeredTraps.has(trap.id))) {
         if (playerRect.right > trapRect.left &&
             playerRect.left < trapRect.right &&
             playerRect.bottom > trapRect.top &&
             playerRect.top < trapRect.bottom) {
           
+          console.log('Player collided with trap:', trap.type, trap.id);
+          
           if (trap.type === 'fake') {
             // Fake platform - player falls through immediately
+            console.log('Fake platform triggered - calling onDeath');
             onDeath();
             return { pos, vel: newVel, grounded: false };
           } else if (trap.type === 'disappearing') {
@@ -139,18 +147,12 @@ const Player: React.FC<PlayerProps> = ({
 
       // Check other trap types
       if (trap.type === 'spike' || trap.type === 'reverse') {
-        const trapRect = {
-          left: trap.x,
-          right: trap.x + trap.width,
-          top: trap.y,
-          bottom: trap.y + trap.height
-        };
-
         if (playerRect.right > trapRect.left &&
             playerRect.left < trapRect.right &&
             playerRect.bottom > trapRect.top &&
             playerRect.top < trapRect.bottom) {
           
+          console.log('Player hit spike/reverse trap:', trap.type);
           // Trigger the trap
           if (trap.type === 'spike') {
             onDeath();
