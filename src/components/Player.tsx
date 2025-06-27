@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Position, LevelData, Trap } from './Game';
 
@@ -194,37 +193,36 @@ const Player: React.FC<PlayerProps> = ({
         return newVel;
       });
 
-      onPositionChange(prevPos => {
-        let newPos = {
-          x: prevPos.x + velocity.x,
-          y: prevPos.y + velocity.y
-        };
+      let newPos = {
+        x: position.x + velocity.x,
+        y: position.y + velocity.y
+      };
 
-        // Check collisions
-        const collision = checkPlatformCollision(newPos, velocity);
-        newPos = collision.pos;
-        setVelocity(collision.vel);
-        setIsGrounded(collision.grounded);
+      // Check collisions
+      const collision = checkPlatformCollision(newPos, velocity);
+      newPos = collision.pos;
+      setVelocity(collision.vel);
+      setIsGrounded(collision.grounded);
 
-        // Check boundaries
-        if (newPos.x < 0) newPos.x = 0;
-        if (newPos.x > 850) newPos.x = 850;
+      // Check boundaries
+      if (newPos.x < 0) newPos.x = 0;
+      if (newPos.x > 850) newPos.x = 850;
 
-        // Check if fallen off the world
-        if (newPos.y > 600) {
-          onDeath();
-          return prevPos;
-        }
+      // Check if fallen off the world
+      if (newPos.y > 600) {
+        onDeath();
+        return;
+      }
 
-        // Check exit
-        checkExit(newPos);
+      // Check exit
+      checkExit(newPos);
 
-        return newPos;
-      });
+      // Update position
+      onPositionChange(newPos);
     }, 16); // ~60 FPS
 
     return () => clearInterval(gameLoop);
-  }, [velocity, keys, checkPlatformCollision, checkExit, onDeath, reversedControls, onPositionChange]);
+  }, [velocity, keys, checkPlatformCollision, checkExit, onDeath, reversedControls, onPositionChange, position]);
 
   // Handle jumping
   useEffect(() => {
