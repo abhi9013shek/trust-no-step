@@ -194,7 +194,7 @@ const Player: React.FC<PlayerProps> = ({
         return newVel;
       });
 
-      setPosition(prevPos => {
+      onPositionChange(prevPos => {
         let newPos = {
           x: prevPos.x + velocity.x,
           y: prevPos.y + velocity.y
@@ -224,7 +224,7 @@ const Player: React.FC<PlayerProps> = ({
     }, 16); // ~60 FPS
 
     return () => clearInterval(gameLoop);
-  }, [velocity, keys, checkPlatformCollision, checkExit, onDeath, reversedControls]);
+  }, [velocity, keys, checkPlatformCollision, checkExit, onDeath, reversedControls, onPositionChange]);
 
   // Handle jumping
   useEffect(() => {
